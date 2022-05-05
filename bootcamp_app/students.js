@@ -6,22 +6,31 @@ const pool = new Pool({
   host: "localhost",
   database: "bootcampx",
 });
-const cohortName = process.argv[2];
-const maxResults = process.argv[3];
 
-pool
-  .query(
-    `
-    SELECT students.id as student_id, students.name as name, ${cohortName} as cohort
+// pool.connect()
+//   .then(() => console.log(`connected to database`));
+//   .catch((error) => console.log('connection error', error.stack));
+
+// console.log("cohort name", cohortName);
+// console.log("max results", maxResults);
+
+const cohortName = process.argv[2];
+const queryString = `
+    SELECT students.id as student_id, students.name as name, cohorts.name as cohort
     FROM students
     JOIN cohorts ON cohorts.id = cohort_id
-    LIMIT ${maxResults};
-    `
-  )
+    WHERE cohorts.name LIKE $1
+    LIMIT $2;
+    `;
+const limit = process.argv[3] || 5;
+const values = [`%${cohortName}%`, limit ];
+
+pool.query(queryString, values)
   .then((res) => {
     res.rows.forEach((user) => {
       console.log(
         `${user.name} has an id of ${user.student_id} and was in the ${user.cohort} cohort`
       );
     });
-  });
+  })
+  .catch((error) => console.log('connection error', error));
